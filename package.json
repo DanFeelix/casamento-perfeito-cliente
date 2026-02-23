@@ -1,0 +1,20 @@
+{
+  "name": "casamento-perfeito-portal-cliente",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Portal Cliente - Casamento Perfeito App (React Web + React Native)",
+  "workspaces": [
+    "apps/web",
+    "apps/mobile"
+  ],
+  "scripts": {
+    "web": "npm run dev -w apps/web",
+    "mobile": "npm run start -w apps/mobile",
+    "mobile:clear": "npm run start:clear -w apps/mobile",
+    "mobile:tunnel": "npm run start:tunnel -w apps/mobile",
+    "build:web": "npm run build -w apps/web",
+    "build:mobile": "npm run build -w apps/mobile"
+  },
+  "keywords": ["casamento", "wedding", "react", "react-native"],
+  "license": "UNLICENSED"
+}

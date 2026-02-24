@@ -1,0 +1,71 @@
+name: Auto PR for Feature Branches
+
+on:
+  push:
+    branches:
+      - 'feature/**'
+  workflow_dispatch:
+
+jobs:
+  create-pr:
+    name: Create Pull Request
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create Pull Request
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          set -e
+
+          BRANCH_NAME="${{ github.ref_name }}"
+          BASE_BRANCH="develop"
+
+          echo "🔄 Buscando branch base ($BASE_BRANCH)..."
+          git fetch origin "$BASE_BRANCH:$BASE_BRANCH"
+
+          echo "🔍 Verificando se já existe PR para $BRANCH_NAME..."
+          existing_pr=$(gh pr list \
+            --head "$BRANCH_NAME" \
+            --base "$BASE_BRANCH" \
+            --json url \
+            --jq '.[0].url')
+
+          if [ -n "$existing_pr" ]; then
+            echo "✅ PR já existe: $existing_pr"
+            exit 0
+          fi
+
+          echo "📝 Gerando título do PR a partir do último commit..."
+          PR_TITLE=$(git log -1 --pretty=format:"%s")
+
+          echo "📌 Coletando commits..."
+          COMMITS=$(git log "$BASE_BRANCH..HEAD" --pretty=format:"- %s (%an)")
+
+          echo "🗂️ Coletando arquivos alterados..."
+          FILES_CHANGED=$(git diff --name-only "$BASE_BRANCH...HEAD" | sed 's/^/- /')
+
+          PR_BODY=$(printf "%s\n\n%s\n%s\n\n%s\n%s\n\n---\n🤖 PR criado automaticamente via GitHub Actions" \
+            "## 🧠 Descrição automática do PR" \
+            "### 📌 Commits incluídos" \
+            "$COMMITS" \
+            "### 🗂️ Arquivos alterados" \
+            "$FILES_CHANGED")
+
+          echo "🚀 Criando PR..."
+          gh pr create \
+            --base "$BASE_BRANCH" \
+            --head "$BRANCH_NAME" \
+            --title "$PR_TITLE" \
+            --body "$PR_BODY"
+
+          echo "🎉 PR criado com sucesso!"
